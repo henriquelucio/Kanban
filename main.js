@@ -1,3 +1,5 @@
+var tasksArray = [];
+
 //Reference to handle HTML Elements
 const addTaskBtnEl = document.getElementById("add-task-btn");
 const newTaskInputEl = document.getElementById("new-task-input");
@@ -8,20 +10,56 @@ addTaskBtnEl.addEventListener("click", addNewTask);
 
 //Functions
 function addNewTask(){
-    if(newTaskInputEl.value.trim() !== ""){
-    const newTaskLi = document.createElement("li");
-    newTaskLi.innerHTML = newTaskInputEl.value + ' <button class="done-btn">O</button> <button class="delete-btn">X</button>';
-    const deleteBtn = newTaskLi.querySelector(".delete-btn");
-    const doneBtn = newTaskLi.querySelector(".done-btn");
-    deleteBtn.addEventListener("click", () =>{
-        newTaskLi.remove();
-    });
-    doneBtn.addEventListener("click", () =>{
-        newTaskLi.classList.toggle("completed");
-    });
-    unorderedListEl.prepend(newTaskLi);
+    const text = newTaskInputEl.value.trim();
+    if(text === "") return alert("Empty task!");
+
+    const newTask = {
+        id: Date.now(),
+        text: text,
+        isCompleted: false
+    };
+
+    tasksArray.push(newTask);
+
     newTaskInputEl.value = "";
-    }else{
-        alert("Type the task in input field!");
+    renderTasks();
+}
+
+function renderTasks(){
+    unorderedListEl.innerHTML = "";
+
+    tasksArray.forEach(task => {
+        const li = document.createElement("li");
+
+        li.innerHTML = `<span class="${task.isCompleted ? "completed" : ""}">${task.text}</span>
+        <button class="done-btn">O</button>
+        <button class="delete-btn">X</button>
+        `;
+
+        const doneBtn = li.querySelector(".done-btn");
+        const deleteBtn = li.querySelector(".delete-btn");
+
+        doneBtn.addEventListener("click", () => {
+            toggleTask(task.id);
+        })
+
+        deleteBtn.addEventListener("click", () => {
+            deleteTask(task.id);
+        })
+
+        unorderedListEl.appendChild(li);
+    })
+}
+
+function toggleTask(id){
+    const task = tasksArray.find(t => t.id === id);
+    if(task){
+        task.isCompleted = !task.isCompleted;
     }
+    renderTasks();
+}
+
+function deleteTask(id){
+    tasksArray = tasksArray.filter(task => task.id !== id);
+    renderTasks();
 }
