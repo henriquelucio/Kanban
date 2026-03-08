@@ -8,6 +8,11 @@ const unorderedListEl = document.getElementById("tasks-list");
 //Events
 addTaskBtnEl.addEventListener("click", addNewTask);
 
+//Main
+
+loadFromLocalStorage();
+renderTasks();
+
 //Functions
 function addNewTask(){
     const text = newTaskInputEl.value.trim();
@@ -20,6 +25,7 @@ function addNewTask(){
     };
 
     tasksArray.push(newTask);
+    saveToLocalStorage();
 
     newTaskInputEl.value = "";
     renderTasks();
@@ -62,4 +68,12 @@ function toggleTask(id){
 function deleteTask(id){
     tasksArray = tasksArray.filter(task => task.id !== id);
     renderTasks();
+}
+
+function saveToLocalStorage(){
+    localStorage.setItem("myTasks", JSON.stringify(tasksArray));
+}
+
+function loadFromLocalStorage(){
+    tasksArray = JSON.parse(localStorage.getItem("myTasks")) || [];
 }
