@@ -1,4 +1,8 @@
-var tasksArray = [];
+//Import
+import { DataStorage } from "./dataStorage.js";
+
+//Vars
+var tasksArray = DataStorage.loadFromLocalStorage();
 
 //Reference to handle HTML Elements
 const addTaskBtnEl = document.getElementById("add-task-btn");
@@ -9,8 +13,6 @@ const unorderedListEl = document.getElementById("tasks-list");
 addTaskBtnEl.addEventListener("click", addNewTask);
 
 //Main
-
-loadFromLocalStorage();
 renderTasks();
 
 //Functions
@@ -21,14 +23,13 @@ function addNewTask(){
     const newTask = {
         id: Date.now(),
         text: text,
-        isCompleted: false
+        isCompleted: false,
     };
 
     tasksArray.push(newTask);
-    saveToLocalStorage();
-
     newTaskInputEl.value = "";
-    renderTasks();
+
+    syncState();
 }
 
 function renderTasks(){
@@ -62,18 +63,15 @@ function toggleTask(id){
     if(task){
         task.isCompleted = !task.isCompleted;
     }
-    renderTasks();
+    syncState();
 }
 
 function deleteTask(id){
     tasksArray = tasksArray.filter(task => task.id !== id);
+    syncState();
+}
+
+function syncState(){
     renderTasks();
-}
-
-function saveToLocalStorage(){
-    localStorage.setItem("myTasks", JSON.stringify(tasksArray));
-}
-
-function loadFromLocalStorage(){
-    tasksArray = JSON.parse(localStorage.getItem("myTasks")) || [];
+    DataStorage.saveToLocalStorage(tasksArray);
 }
