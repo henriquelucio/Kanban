@@ -13,6 +13,10 @@ if(appState.rooms.length === 0){
     appState.currentRoomId = "room-1";
 }
 
+//Temp vars for drag and drop
+let draggedTaskId = null;
+let sourceColumnId = null;
+
 //Reference to handle HTML Elements
 const newColumnBtnEl = document.getElementById("add-new-board");
 const newColumnTitleEl = document.getElementById("new-column-title");
@@ -24,6 +28,49 @@ newColumnBtnEl.addEventListener("click", () => {
     addColumn(title);
     newColumnTitleEl.value = "";
 });
+
+//Event Drag and Drop
+//Start drag
+boardEl.addEventListener("dragstart", (event) => {
+    const taskItem = event.target.closest(".task-item");
+    if(taskItem){  //Allow only task-itens class to be draggable
+        draggedTaskId = taskItem.getAttribute("data-task-id");  //Gets task id
+        const columnEl = taskItem.closest(".kanban-column");    //Gets column and set on reference
+        sourceColumnId = columnEl.getAttribute("data-id") //Gets column id
+        taskItem.classList.add("dragging") //Sets class for visual style
+        console.log("Dragstart working");
+    }
+});
+
+//Clear style class from dragged task
+boardEl.addEventListener("dragend", (event) => {
+    if(event.target.classList.contains("task-itens")){
+        event.target.classList.remove("dragging");
+        console.log("Dragend working");
+    }
+});
+
+//Allows drop to happen - browser blocks it by default
+boardEl.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    console.log("Dragover working");
+});
+
+//Executes after dropping the task
+boardEl.addEventListener("drop", (event) => {
+    event.preventDefault();
+
+    //Gets target column and id from user, if target column difer from current column calls function
+    const targetColumnEl = event.target.closest(".kanban-column");
+    if(targetColumnEl){
+        const targetColumnId = targetColumnEl.getAttribute("data-id");
+        if(targetColumnId !== sourceColumnId){
+            moveTask(draggedTaskId, sourceColumnId, targetColumnId);
+        }
+    }
+    console.log("Drop working");
+});
+
 
 //Event Delegation
 boardEl.addEventListener("click", (event) => {
@@ -111,7 +158,11 @@ function renderTasks(){
         const tasksUlistEl = columnContainer.querySelector(".tasks-ulist");
 
         column.tasks.forEach(task => {
-            const li = document.createElement("li");
+            const li = document.createElement("li");    //Create li element
+            li.setAttribute("draggable", "true");       //Allow drag and drop
+            li.classList.add("task-item");              //Class to identify the task
+            li.setAttribute("data-task-id", task.id);   //task id with li element
+            //Creates the child HTML element of li
             li.innerHTML = `
                 <span class="${task.isCompleted ? "completed" : ""}">${task.text}</span>
                 <button class="done-btn" data-task-id="${task.id}">O</button>
@@ -141,6 +192,19 @@ function deleteTask(columnId, taskId){
         column.tasks = column.tasks.filter(task => task.id !== taskId)
     }
     syncState();
+}
+
+function moveTask(taskId, fromColumnId, toColumnId){
+    const fromColumn = appState.rooms[0].columns.find(col => col.id === fromColumnId);
+    const toColumn = appState.rooms[0].columns.find(col => col.id === toColumnId);
+
+    if(fromColumn && toColumn){
+        const taskIndex = fromColumn.tasks.findIndex(t => String(t.id) === String(taskId)); //Search for task at origin column
+        const [taskToMove] = fromColumn.tasks.splice(taskIndex, 1); //Remove task from origin column
+        toColumn.tasks.push(taskToMove);    //Set task in target column
+
+        syncState();
+    }
 }
 
 function syncState(){
