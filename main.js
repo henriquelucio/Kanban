@@ -3,6 +3,7 @@ import { DataStorage } from "./dataStorage.js";
 
 //Vars
 let appState = DataStorage.loadFromLocalStorage();
+window.appState = appState;
 
 if(appState.rooms.length === 0){
     appState.rooms.push({
@@ -26,7 +27,6 @@ newColumnBtnEl.addEventListener("click", () => {
 
 //Event Delegation
 boardEl.addEventListener("click", (event) => {
-        
         //Add new task
         if(event.target.classList.contains("new-task-btn")){
             const parentColumn = event.target.closest(".kanban-column");
@@ -35,7 +35,7 @@ boardEl.addEventListener("click", (event) => {
             const taskText = inputEl.value.trim();
 
             if(taskText !== ""){
-                inputEl.value = "";
+                addNewTask(columnId, taskText);
             } else {
                 alert("Empty task!");
             }
@@ -45,7 +45,7 @@ boardEl.addEventListener("click", (event) => {
         if(event.target.classList.contains("done-btn")){
             const parentColumn = event.target.closest(".kanban-column");
             const columnId = parentColumn.getAttribute("data-id");
-            const taskId = parseInt(event.target.getAttribute("data-task-id"));
+            const taskId = event.target.getAttribute("data-task-id");
             toggleTask(columnId, taskId);
         }
 
@@ -53,7 +53,7 @@ boardEl.addEventListener("click", (event) => {
         if(event.target.classList.contains("delete-btn")){
             const parentColumn = event.target.closest(".kanban-column");
             const columnId = parentColumn.getAttribute("data-id");
-            const taskId = parseInt(event.target.getAttribute("data-task-id"));
+            const taskId = event.target.getAttribute("data-task-id");
             deleteTask(columnId, taskId);
         }
     });
@@ -76,7 +76,7 @@ function addColumn(title){
 
 function addNewTask(columnId, text){
     const newTask = {
-        id: Date.now(),
+        id: Date.now().toString(),
         text: text,
         isCompleted: false,
     };
@@ -84,9 +84,8 @@ function addNewTask(columnId, text){
     const column = appState.rooms[0].columns.find(col => col.id === columnId);
     if(column){
         column.tasks.push(newTask);
+        syncState();
     }
-
-    syncState();
 }
 
 function renderTasks(){
@@ -96,13 +95,14 @@ function renderTasks(){
     //Creates HTML elements needed for each column
     appState.rooms[0].columns.forEach(column => {
         const columnContainer = document.createElement("div");
-        columnContainer.classList.add("kanban-board");
+        columnContainer.classList.add("kanban-column");
         columnContainer.setAttribute("data-id", column.id);
 
 
-        columnContainer.innerHTML = `<h2>${column.title}</h2>
+        columnContainer.innerHTML = `
+        <h2>${column.title}</h2>
         <div class="tasks-container">
-            <input type="text" ckass="new-task-input" placeholder="What should be done?">
+            <input type="text" class="new-task-input" placeholder="What should be done?">
             <button class="new-task-btn">+</button>
         </div>
         <ul class="tasks-ulist"></ul>
@@ -110,7 +110,7 @@ function renderTasks(){
 
         const tasksUlistEl = columnContainer.querySelector(".tasks-ulist");
 
-        column.tasks.forEach(task => () => {
+        column.tasks.forEach(task => {
             const li = document.createElement("li");
             li.innerHTML = `
                 <span class="${task.isCompleted ? "completed" : ""}">${task.text}</span>
